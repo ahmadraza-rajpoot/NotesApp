@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Note from "./components/Note";
 
 export default function Home() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [notes, setNotes] = useState([]);
 
   const handleSubmit = async(e:React.ChangeEvent)=>{
     e.preventDefault()
@@ -28,8 +30,10 @@ export default function Home() {
     })
 
     if(res.ok){
-   
+      getNotes()
       alert("notes has been created")
+      setTitle("");
+      setDescription("")
     }
   
     } catch (error) {
@@ -39,6 +43,28 @@ export default function Home() {
       setIsLoading(false)
     }
   }
+
+  async function getNotes(){
+    
+    try {
+
+      const res = await fetch("/api/notes");
+      const data = await res.json();
+  
+      setNotes(data.data);
+      
+    } catch (error) {
+      alert("Something went wrong.");
+    }
+  }
+
+  async function handleEdit(){}
+
+  async function handleDelete(){}
+
+  useEffect(()=>{
+    getNotes()
+  },[])
 
 
   return (
@@ -86,7 +112,28 @@ export default function Home() {
       </div>
       <button disabled={isLoading} type="submit" className="px-4 py-2 bg-indigo-600 w-40 self-center rounded-md">Create Note</button>
     </form>
+
+   
   </div>
+
+   <div className="flex flex-wrap my-10 gap-4 justify-start items-center">
+      
+      {notes?.length == 0?(
+        <h1 className="text-3xl text-gray-300">No notes, please create new one!</h1>
+      ):(
+        notes.map((note:note) =>(
+          <Note key={note.id} date={note.created_at.split("T")[0]} title={note.title} description={note.description} onEdit={handleEdit} onDelete={handleDelete} />
+        ))
+      )}
+      
+    </div>
 </div>
   );
+}
+
+type note = {
+  id:string,
+  title:string,
+  description:string,
+  created_at:string,
 }

@@ -52,7 +52,7 @@ export async function GET(req:Request){
         const supabase = createClient();
 
         const {data, error} = await supabase.from("notes")
-        .select("*")
+        .select("*").order("created_at", {ascending:false})
 
         if(error){
             return Response.json({
