@@ -9,6 +9,7 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [notes, setNotes] = useState([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleSubmit = async(e:React.ChangeEvent)=>{
     e.preventDefault()
@@ -20,7 +21,30 @@ export default function Home() {
 
 
     try {
+
       setIsLoading(true)
+
+      if(editingId !== null){
+        console.log("work")
+        const res = await fetch(`/api/notes/${editingId}`,{
+          method:"PUT",
+          headers:{
+            "content-type":"application/json",
+            
+          },
+          body:JSON.stringify({title, description})
+        })
+
+        if(res.ok){
+          setTitle("");
+          setDescription("");
+          setEditingId(null);
+          getNotes();
+        }
+
+        return;
+      }
+
       const res = await fetch("/api/notes",{
       method:"POST",
       headers:{
@@ -58,9 +82,38 @@ export default function Home() {
     }
   }
 
-  async function handleEdit(){}
+  async function handleEdit(note:note){
+    setEditingId(note.id);
+    setTitle(note.title);
+    setDescription(note.description);
+  }
 
-  async function handleDelete(){}
+  async function handleDelete(id:string){
+
+    try {
+
+      if(!confirm("Are you sure?")) return;
+
+      const res = await fetch(`/api/notes/${id}`, {
+        method:"DELETE"
+      })
+
+      if(res.ok){
+        getNotes();
+      }  
+    
+    } catch (error) {
+      alert("Something went wrong while deleting the note.")  
+    }
+    
+
+  }
+
+  async function handleCancelEdit(){
+    setEditingId(null);
+    setTitle("");
+    setDescription("")
+  }
 
   useEffect(()=>{
     getNotes()
@@ -110,7 +163,10 @@ export default function Home() {
           placeholder="Please enter note description"
         />
       </div>
-      <button disabled={isLoading} type="submit" className="px-4 py-2 bg-indigo-600 w-40 self-center rounded-md">Create Note</button>
+       <div className="self-center flex gap-5">
+        <button disabled={isLoading} type="submit" className="px-4 py-2 bg-indigo-600 w-40 self-center rounded-md">{isLoading?"Saving...":editingId?"Update Note":"Create Note"}</button>
+          {editingId&& <button onClick={handleCancelEdit} className="px-3 py-2 bg-gray-500 rounded-md">Cancel</button>}  
+        </div> 
     </form>
 
    
@@ -122,7 +178,7 @@ export default function Home() {
         <h1 className="text-3xl text-gray-300">No notes, please create new one!</h1>
       ):(
         notes.map((note:note) =>(
-          <Note key={note.id} date={note.created_at.split("T")[0]} title={note.title} description={note.description} onEdit={handleEdit} onDelete={handleDelete} />
+          <Note key={note.id} date={note.created_at.split("T")[0]} title={note.title} description={note.description} onEdit={()=>handleEdit(note)} onDelete={()=>handleDelete(note.id)} />
         ))
       )}
       
